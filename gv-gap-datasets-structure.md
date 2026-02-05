@@ -1,123 +1,144 @@
 # Dataset Structure: Positive/Negative Examples per Prompt
 
-For G-V gap research, we need datasets with clear positive AND negative examples per prompt/question. This table summarizes the structure.
+For G-V gap research, we need datasets with MANY positives AND negatives per prompt/question. 
 
 ---
 
-## Summary Table
+## 🌟 HIGH-DENSITY DATASETS (Many candidates per question)
 
-| Dataset | Pos per Q | Neg per Q | Total Examples | Structure | Notes |
-|---------|-----------|-----------|----------------|-----------|-------|
-| **LAMA/TREx** | 1 | 0 (implicit) | ~34K | Cloze completion | Only correct answer provided; negatives = all other tokens |
-| **CommonsenseQA** | 1 | 4 | 12,102 | 5-way MCQ | Clean structure for G-V |
-| **TruthfulQA** | 1-4 | 1-4 | 817 | Variable MCQ or binary | Binary version: 1 correct, 1 "best incorrect" |
-| **HellaSwag** | 1 | 3 | ~10K | 4-way MCQ | Adversarially constructed negatives |
-| **SWAG** | 1 | 3 | 113K | 4-way MCQ | Predecessor to HellaSwag |
-| **SNLI** | ~1 | ~2 | 570K | 3-class per pair | 1 entailment, 1 contradiction, 1 neutral per premise |
-| **MNLI** | ~1 | ~2 | 433K | 3-class per pair | Multi-genre version of SNLI |
-| **SWORDS** | Variable | Variable | ~27K substitutes | Graded ratings | Avg 4.1 substitutes per target; ratings indicate quality |
-| **THINGS (Hypernymy)** | 1 | 1 | Balanced | Binary per pair | Explicitly balanced pos/neg by Rodriguez et al. |
-| **WinoGrande** | 1 | 1 | ~44K | Binary choice | Two options per sentence, one correct |
-| **BoolQ** | 1 | 0 | 15,942 | Yes/No per passage | ~62% Yes, 38% No (imbalanced across dataset) |
-| **TriviaQA** | 1+ | 0 (implicit) | 95K | Open-ended QA | Multiple answer aliases; no explicit negatives |
-| **LAMBADA** | 1 | 0 (implicit) | 10K | Word completion | Single correct final word |
-| **GSM8K** | 1 | 0 (implicit) | 8.5K | Math word problems | Single correct numeric answer |
+These are the best for G-V gap research because they provide multiple graded candidates:
 
----
+### PlausibleQA ⭐⭐⭐ (BEST FIND)
+- **Structure:** 10K questions × 10 candidate answers = **100K total**
+- **Positives:** 1 correct + multiple "plausible" answers with graded scores
+- **Negatives:** Multiple implausible answers with graded scores
+- **Bonus:** 900K pairwise comparison justifications
+- **Paper:** SIGIR 2025, arXiv:2502.16358
+- **GitHub:** https://github.com/DataScienceUIBK/PlausibleQA
+- **Why perfect:** Explicit plausibility scores for each answer, designed for exactly this problem
 
-## Detailed Notes
+### ChaosNLI ⭐⭐⭐
+- **Structure:** 4,645 NLI examples × **100 annotations each** = 464K annotations
+- **Source:** Subset of SNLI, MNLI, Abductive-NLI
+- **Key insight:** 100 human judgments per example reveals natural disagreement
+- **Labels:** Each annotator picks entailment/neutral/contradiction
+- **Paper:** EMNLP 2020, arXiv:2010.03532
+- **GitHub:** https://github.com/easonnie/ChaosNLI
+- **Why perfect:** Distribution over labels gives graded pos/neg signal
 
-### Tier 1: Best for G-V Research (explicit pos/neg per question)
+### CoInCo (Concepts in Context) ⭐⭐
+- **Structure:** ~15K target words, **6+ substitutes per target**
+- **Type:** Lexical substitution (all-words annotation)
+- **Source:** MASC corpus (news + fiction)
+- **URL:** https://www.ims.uni-stuttgart.de/en/research/resources/corpora/coinco/
+- **Why good:** Every content word annotated with multiple valid substitutes
 
-**CommonsenseQA**
-- Structure: Question → 5 choices (1 correct, 4 distractors)
-- Perfect for G-V: Can compare P(generate correct) vs P(validate each choice)
-- Distractors from ConceptNet, semantically related but wrong
+### SWORDS ⭐⭐
+- **Structure:** 1,132 targets × **~4.1 substitutes per target** (graded ratings)
+- **Type:** Lexical substitution with quality ratings
+- **Key feature:** Human ratings of substitute appropriateness (not binary)
+- **Paper:** NAACL 2021
+- **GitHub:** https://github.com/p-lambda/swords
+- **Why good:** Already proven in RankAlign paper
 
-**HellaSwag / SWAG**
-- Structure: Context → 4 completions (1 correct, 3 adversarial)
-- Negatives specifically designed to fool models
-- Great for probing the gap on "should know" cases
+### AmbigQA ⭐⭐
+- **Structure:** Questions with **multiple valid answers** (inherently ambiguous)
+- **Type:** Open-domain QA where ambiguity yields multiple correct answers
+- **Example:** "When did the US enter WW2?" → multiple valid dates depending on interpretation
+- **Paper:** EMNLP 2020
+- **GitHub:** https://github.com/shmsw25/AmbigQA
+- **Why good:** Multiple genuinely correct answers per question
 
-**THINGS (Hypernymy)**
-- Structure: (hyponym, hypernym) pairs, balanced pos/neg
-- Already proven in RankAlign paper
-- Negatives are semantically similar non-hypernyms
-
-**WinoGrande**
-- Structure: Sentence with blank → 2 options
-- Binary choice, balanced
-- Tests commonsense pronoun resolution
-
-### Tier 2: Good with some adaptation
-
-**SNLI/MNLI**
-- Structure: Premise → Hypothesis → {entailment, contradiction, neutral}
-- For G-V: Given premise, can model generate entailed hypothesis? Does it validate correctly?
-- **Key insight**: Each premise has ~3 hypotheses (one per class), giving natural pos/neg
-- Rich human disagreement data available (5 annotators per example)
-
-**TruthfulQA**
-- Binary version: 1 correct + 1 "best incorrect" answer per question
-- MCQ version: Variable choices (standardized to 4 in some versions)
-- Specifically targets cases where models should know truth but generate falsehoods
-
-**SWORDS**
-- Structure: (context, target word) → multiple substitutes with graded ratings
-- Avg 4.1 substitutes per target
-- Can threshold ratings to create pos/neg splits
-- Already proven in RankAlign paper
-
-### Tier 3: Requires negative construction
-
-**LAMA/TREx**
-- Only provides correct answers
-- Negatives must be constructed (e.g., other entities of same type, random tokens)
-- Can use entity type constraints for meaningful negatives
-
-**TriviaQA / LAMBADA / GSM8K**
-- Only correct answers provided
-- Need to sample incorrect answers (from model, from corpus, etc.)
-- RankAlign paper did this by sampling model generations
-
-**BoolQ**
-- Each question has single Yes/No answer
-- Not naturally paired pos/neg
-- Could construct by pairing semantically similar questions with opposite answers
+### ALaSca (Large-Scale Lexical Substitution) ⭐⭐
+- **Structure:** Large-scale, automatically constructed
+- **Type:** Silver-standard substitutes for lexical substitution
+- **URL:** https://sapienzanlp.github.io/alasca/
+- **Why good:** Much larger scale than manually annotated datasets
 
 ---
 
-## Recommendations for G-V Research
+## MODERATE-DENSITY DATASETS (4-5 choices per question)
 
-### Best bets (no modification needed):
-1. **CommonsenseQA** — Clean 5-way MCQ, 12K examples
-2. **HellaSwag** — Adversarial 4-way, ~10K examples  
-3. **THINGS** — Balanced binary hypernymy, proven in RankAlign
-4. **WinoGrande** — Binary commonsense, ~44K examples
-5. **TruthfulQA (binary)** — Targets the exact problem, 817 examples
+These have fixed MCQ structure but fewer candidates:
 
-### Good with grouping/adaptation:
-6. **SNLI/MNLI** — Group by premise to get pos/neg hypothesis pairs
-7. **SWORDS** — Threshold ratings for pos/neg
-
-### Require negative sampling:
-8. **LAMA** — Sample negatives from same entity type
-9. **TriviaQA** — Sample wrong answers from model or similar questions
-10. **GSM8K** — Sample wrong numeric answers (or wrong reasoning paths)
-
----
-
-## Key Insight: What Makes a Good G-V Dataset
-
-For studying the generator-validator gap, you need:
-
-1. **Explicit positives AND negatives per question** — to measure both directions of the gap
-2. **Semantically meaningful negatives** — random wrong answers don't probe "knows but doesn't say"
-3. **Multiple candidates per question** — to measure correlation, not just binary agreement
-4. **Difficulty stratification** — to isolate where the gap is largest
-
-CommonsenseQA and HellaSwag hit all four criteria. LAMA/TriviaQA require work to add negatives.
+| Dataset | Choices | Total Qs | Negative Quality |
+|---------|---------|----------|------------------|
+| CommonsenseQA | 1+4 | 12K | ConceptNet distractors |
+| HellaSwag | 1+3 | 10K | Adversarial (model-generated) |
+| SWAG | 1+3 | 113K | Adversarial |
+| WinoGrande | 1+1 | 44K | Balanced binary |
+| ARC (Easy/Challenge) | 1+3 | 7.8K | Science exam distractors |
+| OpenBookQA | 1+3 | 6K | Requires reasoning |
+| RACE | 1+3 | 100K | Human-written (exams) |
+| SciQ | 1+3 | 13.7K | Science domain |
+| QASC | 1+7 | 9.9K | **8 choices total** |
+| MedMCQA | 1+3 | 194K | Medical domain |
 
 ---
 
-*Compiled by John P. Lake 🐟 — 2026-02-05*
+## DATASETS REQUIRING CANDIDATE CONSTRUCTION
+
+These only provide correct answers — negatives must be constructed:
+
+| Dataset | Total | Notes on Negative Construction |
+|---------|-------|-------------------------------|
+| LAMA/TREx | 34K | Sample from same entity type |
+| TriviaQA | 95K | Sample from similar questions |
+| Natural Questions | 300K+ | Sample from corpus |
+| LAMBADA | 10K | Sample other plausible words |
+| SQuAD 2.0 | 150K | Has unanswerable Qs (partial negatives) |
+| GSM8K | 8.5K | Sample wrong numeric answers |
+
+---
+
+## GRADED SIMILARITY/RELATEDNESS DATASETS
+
+These provide continuous scores rather than binary labels:
+
+| Dataset | Pairs | Scale | Notes |
+|---------|-------|-------|-------|
+| SimLex-999 | 999 | 0-10 | Similarity (not relatedness) |
+| WordSim-353 | 353 | 0-10 | Relatedness |
+| MEN | 3,000 | 0-50 | Relatedness |
+| RG-65 | 65 | 0-4 | Classic word similarity |
+| CoSimLex | 340 | 0-10 | Context-dependent similarity |
+
+---
+
+## RECOMMENDED PRIORITY FOR G-V RESEARCH
+
+### Tier 1: Use immediately (high density, graded)
+1. **PlausibleQA** — 10 candidates per Q with plausibility scores ⭐⭐⭐
+2. **ChaosNLI** — 100 annotations per example, natural distribution ⭐⭐⭐
+3. **CoInCo** — 6+ substitutes per target ⭐⭐
+
+### Tier 2: Good with some processing
+4. **SWORDS** — Graded substitute ratings, proven in RankAlign
+5. **AmbigQA** — Multiple valid answers per question
+6. **QASC** — 8 choices per question (more than typical MCQ)
+
+### Tier 3: Standard MCQ (fewer candidates but high quality)
+7. **CommonsenseQA** — 5 choices, semantic distractors
+8. **HellaSwag** — 4 choices, adversarial
+
+### Tier 4: Need to construct negatives
+9. **LAMA** — Classic knowledge probing (must add negatives)
+10. **TriviaQA** — Large scale (must add negatives)
+
+---
+
+## KEY INSIGHT
+
+**For measuring G-V correlation, you want:**
+- Many candidates per question (not just 4-5)
+- Graded plausibility/quality scores (not just binary)
+- Both positives AND negatives with varying degrees
+
+**PlausibleQA is the gold standard** — it was literally designed for this:
+> "a large-scale dataset comprising 10,000 questions and 100,000 candidate answers, each annotated with plausibility scores"
+
+**ChaosNLI is great for NLI** — 100 human judgments per example reveals the true distribution of opinions, not just majority vote.
+
+---
+
+*Updated by John P. Lake 🐟 — 2026-02-05*
