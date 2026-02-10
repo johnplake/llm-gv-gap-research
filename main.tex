@@ -41,7 +41,7 @@
 \maketitle
 
 \begin{abstract}
-Large language models exhibit a gap between their ability to generate correct answers and their ability to validate answers. We investigate training generators to match validator rankings, improving generation quality without additional human annotation. Our approach enforces same-prompt constraints during training—addressing methodological issues in prior work—and combines ranking loss with NLL regularization to prevent degenerate solutions. We demonstrate improvements on hypernymy, instruction-following, and question-answering tasks using Gemma-2-2B as a base model.
+Large language models exhibit a gap between their ability to generate correct answers and their ability to validate answers. We investigate training generators to match validator rankings, improving generation quality without additional human annotation. Our approach enforces same-prompt constraints during training—addressing methodological issues in prior work—and combines ranking loss with NLL regularization to prevent degenerate solutions. We demonstrate improvements on hypernymy, instruction-following, and question-answering tasks.
 \end{abstract}
 
 \section{Introduction}
@@ -55,9 +55,9 @@ This gap suggests an opportunity: if a model's validator ``knows'' more than its
 
 Our key contributions are:
 \begin{itemize}
-    \item We identify methodological issues in prior work on ranking alignment, particularly the comparison of pairs across different prompts.
+    \item We identify methodological issues in prior work on ranking alignment, particularly the comparison of pairs across different prompts. (OK this is maybe beating up too much on RankAlign?)
     \item We propose a same-prompt training constraint that ensures valid preference comparisons.
-    \item We demonstrate improvements on hypernymy, instruction-following (COLLIE), and question-answering tasks.
+    \item We demonstrate improvements on lexical semantic, instruction-following (COLLIE), and question-answering tasks.
 \end{itemize}
 
 
@@ -67,7 +67,7 @@ Our key contributions are:
 \todo{Expand related work}
 
 \paragraph{Generator-Validator Gap.}
-Prior work has documented the gap between generation and validation capabilities in LLMs~\citep{west2022symbolic}.
+Prior work has documented the gap between generation and validation capabilities in LLMs~\citep{west2022symbolic}. Specifically...\citep{li2024benchmarking}
 
 \paragraph{Preference Learning.}
 RLHF~\citep{ouyang2022instructgpt} and DPO~\citep{rafailov2023dpo} train models using human preference data.
@@ -75,11 +75,13 @@ RLHF~\citep{ouyang2022instructgpt} and DPO~\citep{rafailov2023dpo} train models 
 \paragraph{Self-Improvement.}
 Methods for models to improve using their own feedback.
 
+\section{Problem Formulation}
+\label{problem_formulation}
 
 \section{Method}
 \label{sec:method}
 
-\subsection{Problem Setup}
+
 
 Given a prompt $x$, a generator $\G$ produces completions $y \sim \G(\cdot | x)$, while a validator $\V$ scores completions via $\V(y | x)$. We aim to train $\G$ such that its samples rank highly under $\V$.
 
