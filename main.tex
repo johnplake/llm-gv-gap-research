@@ -1,0 +1,78 @@
+\documentclass{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{natbib}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+% Custom commands
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\V}{\mathcal{V}}  % Validator
+\newcommand{\G}{\mathcal{G}}  % Generator
+
+\title{Improving Language Model Generators via Validator-to-Generator Training}
+\author{
+  Author One \\
+  Institution \\
+  \texttt{email@domain.com}
+  \and
+  Author Two \\
+  Institution \\
+  \texttt{email@domain.com}
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\todo{Write abstract}
+Large language models exhibit a gap between their ability to generate correct answers and their ability to validate answers. We investigate training generators to match validator rankings, improving generation quality without additional human annotation.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+\input{sections/introduction}
+
+\section{Related Work}
+\label{sec:related}
+\input{sections/related}
+
+\section{Method}
+\label{sec:method}
+\input{sections/method}
+
+\section{Experiments}
+\label{sec:experiments}
+\input{sections/experiments}
+
+\section{Results}
+\label{sec:results}
+\input{sections/results}
+
+\section{Discussion}
+\label{sec:discussion}
+\input{sections/discussion}
+
+\section{Conclusion}
+\label{sec:conclusion}
+\input{sections/conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\appendix
+\section{Additional Results}
+\label{app:additional}
+\input{sections/appendix}
+
+\end{document}
