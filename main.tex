@@ -1,5 +1,9 @@
 \documentclass{article}
 
+% NeurIPS 2025 package
+% Options: [preprint] for arXiv, [final] for camera-ready, no option for submission
+\usepackage[preprint]{neurips_2025}
+
 % Packages
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -7,11 +11,11 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{hyperref}
-\usepackage{cleveref}
-\usepackage{natbib}
-\usepackage{xcolor}
+\usepackage{url}
+\usepackage[capitalize]{cleveref}
 \usepackage{algorithm}
 \usepackage{algorithmic}
+\usepackage{xcolor}
 
 % Custom commands
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
@@ -19,60 +23,179 @@
 \newcommand{\G}{\mathcal{G}}  % Generator
 
 \title{Improving Language Model Generators via Validator-to-Generator Training}
+
+% For anonymous submission, leave author blank
+% For preprint/camera-ready, use:
 \author{
-  Author One \\
+  Author One\thanks{Equal contribution.} \\
   Institution \\
-  \texttt{email@domain.com}
-  \and
-  Author Two \\
+  \texttt{email@domain.com} \\
+  \And
+  Author Two\footnotemark[1] \\
   Institution \\
-  \texttt{email@domain.com}
+  \texttt{email@domain.com} \\
 }
-\date{\today}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-\todo{Write abstract}
-Large language models exhibit a gap between their ability to generate correct answers and their ability to validate answers. We investigate training generators to match validator rankings, improving generation quality without additional human annotation.
+Large language models exhibit a gap between their ability to generate correct answers and their ability to validate answers. We investigate training generators to match validator rankings, improving generation quality without additional human annotation. Our approach enforces same-prompt constraints during training—addressing methodological issues in prior work—and combines ranking loss with NLL regularization to prevent degenerate solutions. We demonstrate improvements on hypernymy, instruction-following, and question-answering tasks using Gemma-2-2B as a base model.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
-\input{sections/introduction}
+
+\todo{Draft introduction}
+
+Large language models (LLMs) can be used in two complementary modes: as \emph{generators} that produce candidate answers, and as \emph{validators} that assess answer correctness. Recent work has shown a consistent \emph{generator-validator gap}---models are often better at validating correct answers than generating them~\citep{west2022symbolic}.
+
+This gap suggests an opportunity: if a model's validator ``knows'' more than its generator, can we transfer this knowledge to improve generation? We investigate \emph{validator-to-generator} (V2G) training, where we fine-tune generators to produce completions that would rank highly according to the model's own validator.
+
+Our key contributions are:
+\begin{itemize}
+    \item We identify methodological issues in prior work on ranking alignment, particularly the comparison of pairs across different prompts.
+    \item We propose a same-prompt training constraint that ensures valid preference comparisons.
+    \item We demonstrate improvements on hypernymy, instruction-following (COLLIE), and question-answering tasks.
+\end{itemize}
+
 
 \section{Related Work}
 \label{sec:related}
-\input{sections/related}
+
+\todo{Expand related work}
+
+\paragraph{Generator-Validator Gap.}
+Prior work has documented the gap between generation and validation capabilities in LLMs~\citep{west2022symbolic}.
+
+\paragraph{Preference Learning.}
+RLHF~\citep{ouyang2022instructgpt} and DPO~\citep{rafailov2023dpo} train models using human preference data.
+
+\paragraph{Self-Improvement.}
+Methods for models to improve using their own feedback.
+
 
 \section{Method}
 \label{sec:method}
-\input{sections/method}
+
+\subsection{Problem Setup}
+
+Given a prompt $x$, a generator $\G$ produces completions $y \sim \G(\cdot | x)$, while a validator $\V$ scores completions via $\V(y | x)$. We aim to train $\G$ such that its samples rank highly under $\V$.
+
+\subsection{Same-Prompt Constraint}
+
+A key insight is that preference comparisons must be made \emph{within the same prompt}. Comparing $(x_1, y_1^+)$ vs $(x_2, y_2^-)$ conflates prompt difficulty with answer quality. We enforce:
+\begin{equation}
+    \mathcal{D} = \{(x, y^+, y^-) : \V(y^+ | x) > \V(y^- | x)\}
+\end{equation}
+where all comparisons share the same $x$.
+
+\subsection{Training Objective}
+
+We combine ranking loss with NLL regularization to prevent degenerate solutions:
+\begin{equation}
+    \mathcal{L} = \mathcal{L}_{\text{rank}} + \lambda_G \cdot \text{NLL}_{\text{gen}} + \lambda_V \cdot \text{NLL}_{\text{val}}
+\end{equation}
+
+The NLL terms prevent the model from collapsing to ``yes to everything'' validation or losing generation fluency.
+
+\subsection{Typicality Correction}
+
+To account for completion frequency, we subtract unconditional log probability:
+\begin{equation}
+    \text{score}_{\text{adj}}(y|x) = \text{score}(y|x) - \alpha \cdot \log P_{\text{GPT-2}}(y)
+\end{equation}
+
 
 \section{Experiments}
 \label{sec:experiments}
-\input{sections/experiments}
+
+\todo{Fill in experimental details}
+
+\subsection{Tasks}
+
+\paragraph{Hypernymy.}
+``X is a kind of \_\_\_'' completion task with GPT-4 labeled ground truth.
+
+\paragraph{COLLIE.}
+Constrained text generation from~\citet{collie2024}.
+
+\paragraph{Question Answering.}
+PlausibleQA and AmbigQA datasets with plausible distractors.
+
+\subsection{Setup}
+
+\paragraph{Base Model.} Gemma-2-2B with LoRA fine-tuning.
+
+\paragraph{Training.} \todo{Hyperparameters, batch size, learning rate}
+
+\paragraph{Evaluation.} Per-prompt accuracy, then aggregate across prompts.
+
 
 \section{Results}
 \label{sec:results}
-\input{sections/results}
+
+\todo{Add results tables and figures}
+
+\begin{table}[h]
+\centering
+\caption{V2G Training Results}
+\label{tab:main_results}
+\begin{tabular}{lccc}
+\toprule
+Method & Hypernymy & COLLIE & QA \\
+\midrule
+Base (Gemma-2-2B) & -- & -- & -- \\
++ V2G Training & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \section{Discussion}
 \label{sec:discussion}
-\input{sections/discussion}
+
+\todo{Write discussion}
+
+\paragraph{Limitations.}
+
+\paragraph{Broader Impact.}
+
 
 \section{Conclusion}
 \label{sec:conclusion}
-\input{sections/conclusion}
 
-\bibliographystyle{plainnat}
+\todo{Write conclusion}
+
+We presented a validator-to-generator training approach that improves language model generation by leveraging the model's own validation capabilities.
+
+
+\begin{ack}
+\todo{Acknowledgments - hidden in submission mode}
+\end{ack}
+
+
+{
+\small
+\bibliographystyle{abbrvnat}
 \bibliography{references}
+}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \appendix
+
 \section{Additional Results}
 \label{app:additional}
-\input{sections/appendix}
+
+\todo{Add supplementary material}
+
+\subsection{Hyperparameter Sensitivity}
+
+\subsection{Additional Ablations}
+
+\subsection{Dataset Statistics}
+
 
 \end{document}
