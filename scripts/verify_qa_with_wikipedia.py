@@ -7,22 +7,27 @@ Design goals:
 - Writes results incrementally to a CSV (append per answer)
 - Restartable / idempotent (skip already processed (id, answer))
 
-Current implementation uses Wikipedia's public APIs as the primary online lookup
-(source selection is deterministic and rate-limited).
+Online lookup:
+- Uses Wikipedia's public APIs to retrieve a *citation* (page + summary text).
+
+Decision:
+- Uses an LLM (Anthropic) to judge whether the provided answer is supported by
+  the retrieved evidence.
 
 Input format (CSV): columns: id, question, Num answers, Answers
 - Answers are separated by ';'
 
 Output CSV columns:
-- id, question, answer, verdict, confidence, evidence_url, evidence_text
+- key, id, question, answer, verdict, confidence, evidence_url, evidence_text, llm_output
 
 Verdict meanings:
-- supported: evidence strongly suggests the answer is correct
-- unsupported: evidence suggests the answer is wrong / different
-- unknown: could not resolve confidently (needs manual review or richer search)
+- supported: evidence supports that the answer is correct
+- unsupported: evidence contradicts the answer
+- unknown: evidence is insufficient/ambiguous
 
-NOTE: This is not a perfect fact checker; it is meant to be a conservative,
-transparent verifier that records citations.
+NOTE: This is still not a perfect fact checker (web sources can be wrong; some
+questions won't be covered by Wikipedia). But it is transparent and conservative
+and records citations + the LLM's structured decision.
 """
 
 from __future__ import annotations
@@ -38,6 +43,12 @@ from dataclasses import dataclass
 from typing import Iterable, Optional, Tuple
 
 import requests
+
+# Optional: Anthropic LLM for verification (recommended)
+try:
+    from anthropic import Anthropic
+except Exception:  # pragma: no cover
+    Anthropic = None
 
 WIKI_API = "https://en.wikipedia.org/w/api.php"
 WIKI_REST_SUMMARY = "https://en.wikipedia.org/api/rest_v1/page/summary/{}"
@@ -109,27 +120,58 @@ def wiki_summary(title: str, session: requests.Session, timeout: float = 20.0) -
     return Evidence(url=page_url, text=extract)
 
 
-def simple_verify(question: str, answer: str, ev: Evidence) -> Tuple[str, float]:
-    """Heuristic verifier.
+def llm_verify(question: str, answer: str, ev: Evidence, client: Anthropic, model: str) -> Tuple[str, float, str]:
+    """LLM-based verifier.
 
-    We intentionally keep this conservative:
-    - supported if answer (or close variant) appears in summary text
-    - unsupported if summary contains a conflicting phrase like "is ..." with different entity?
-      (we do NOT do deep NLI here)
-    - otherwise unknown
+    Returns (verdict, confidence, llm_output_json_text).
     """
-    ans_vars = answer_variants(answer)
-    hay = norm_text(ev.text)
 
-    for v in ans_vars:
-        if norm_text(v) and norm_text(v) in hay:
-            # confidence boosted for longer matches
-            conf = 0.65 + min(0.25, len(v) / 100.0)
-            return "supported", float(conf)
+    prompt = f"""
+You are verifying whether a proposed answer is correct for a question.
+You MUST base your decision ONLY on the provided evidence text and URL.
+If the evidence is insufficient or ambiguous, say UNKNOWN.
 
-    # If we couldn't even find the answer string in the summary, we usually can't confidently
-    # call it wrong; mark unknown.
-    return "unknown", 0.3
+Return JSON with keys: verdict, confidence, short_reason, quote.
+- verdict must be one of: SUPPORTED, UNSUPPORTED, UNKNOWN
+- confidence must be a number from 0 to 1
+- quote should be a short direct quote from the evidence that supports the verdict (or empty if none)
+
+QUESTION: {question}
+PROPOSED_ANSWER: {answer}
+EVIDENCE_URL: {ev.url}
+EVIDENCE_TEXT:
+{ev.text}
+""".strip()
+
+    msg = client.messages.create(
+        model=model,
+        max_tokens=250,
+        temperature=0,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    # Anthropic SDK returns content blocks
+    out = "".join(getattr(b, "text", "") for b in msg.content)
+    out_s = out.strip()
+
+    verdict = "unknown"
+    confidence = 0.0
+    try:
+        import json
+
+        j = json.loads(out_s)
+        v = (j.get("verdict") or "").strip().upper()
+        if v in {"SUPPORTED", "UNSUPPORTED", "UNKNOWN"}:
+            verdict = v.lower()
+        c = j.get("confidence")
+        if isinstance(c, (int, float)):
+            confidence = float(c)
+    except Exception:
+        # If parsing fails, record raw output; keep unknown
+        verdict = "unknown"
+        confidence = 0.0
+
+    return verdict, confidence, out_s
 
 
 def iter_input_rows(path: str) -> Iterable[dict]:
@@ -180,11 +222,12 @@ def ensure_out_header(out_csv: str):
             "confidence",
             "evidence_url",
             "evidence_text",
+            "llm_output",
         ])
 
 
 def append_result(out_csv: str, *, key: str, qid: str, question: str, answer: str,
-                  verdict: str, confidence: float, evidence: Optional[Evidence]):
+                  verdict: str, confidence: float, evidence: Optional[Evidence], llm_output: str = ""):
     with open(out_csv, "a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow([
@@ -196,6 +239,7 @@ def append_result(out_csv: str, *, key: str, qid: str, question: str, answer: st
             f"{confidence:.3f}",
             (evidence.url if evidence else ""),
             (evidence.text if evidence else ""),
+            llm_output,
         ])
 
 
@@ -205,13 +249,21 @@ def main():
     ap.add_argument("--output", default="outputs/results.csv", help="Output CSV path")
     ap.add_argument("--sleep", type=float, default=0.2, help="Sleep between network calls (seconds)")
     ap.add_argument("--max-summary-chars", type=int, default=600, help="Truncate evidence text")
+    ap.add_argument("--model", default="claude-3-5-sonnet-latest", help="Anthropic model name")
+    ap.add_argument("--no-llm", action="store_true", help="Disable LLM verification (NOT recommended)")
     args = ap.parse_args()
 
     ensure_out_header(args.output)
     done = load_done_keys(args.output)
 
     session = requests.Session()
-    session.headers.update({"User-Agent": "openclaw-v2g-verifier/0.1 (contact: local)"})
+    session.headers.update({"User-Agent": "openclaw-v2g-verifier/0.2 (contact: local)"})
+
+    llm_client = None
+    if not args.no_llm:
+        if Anthropic is None:
+            raise RuntimeError("anthropic python package not installed; install it or pass --no-llm")
+        llm_client = Anthropic()  # reads ANTHROPIC_API_KEY from env
 
     n_q = 0
     n_ans = 0
@@ -230,7 +282,7 @@ def main():
                 n_skipped += 1
             else:
                 append_result(args.output, key=k, qid=qid, question=question, answer="",
-                              verdict="unknown", confidence=0.0, evidence=None)
+                              verdict="unknown", confidence=0.0, evidence=None, llm_output="")
                 done.add(k)
             continue
 
@@ -247,6 +299,7 @@ def main():
             evidence = None
             verdict = "unknown"
             conf = 0.0
+            llm_out = ""
 
             try:
                 title = wiki_search(query, session)
@@ -254,19 +307,22 @@ def main():
                 if title:
                     evidence = wiki_summary(title, session)
                     time.sleep(args.sleep)
-                    if evidence and evidence.text:
-                        verdict, conf = simple_verify(question, ans, evidence)
+
+                if evidence and evidence.text and len(evidence.text) > args.max_summary_chars:
+                    evidence = Evidence(url=evidence.url, text=evidence.text[: args.max_summary_chars] + "…")
+
+                if llm_client is not None and evidence and evidence.text:
+                    verdict, conf, llm_out = llm_verify(question, ans, evidence, llm_client, args.model)
+
             except Exception as e:
                 # Record the failure as unknown, but do not stop the run.
                 verdict = "unknown"
                 conf = 0.0
                 evidence = Evidence(url="", text=f"ERROR: {type(e).__name__}: {e}")
-
-            if evidence and evidence.text and len(evidence.text) > args.max_summary_chars:
-                evidence = Evidence(url=evidence.url, text=evidence.text[: args.max_summary_chars] + "…")
+                llm_out = ""
 
             append_result(args.output, key=k, qid=qid, question=question, answer=ans,
-                          verdict=verdict, confidence=conf, evidence=evidence)
+                          verdict=verdict, confidence=conf, evidence=evidence, llm_output=llm_out)
             done.add(k)
 
         if n_q % 100 == 0:
