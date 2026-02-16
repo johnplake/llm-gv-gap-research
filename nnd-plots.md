@@ -33,5 +33,5 @@ Written to `Projects/v2g/figures/nnd/`:
 - `qgen_quizdesign`
 - `summ_gpt3_cnn`
 - `summ_gpt3_bbc`
-
-As additional NND-backed datasets (FRANK, SummEval) are fetched, they should be added to this script in the same pattern.
+- `summ_frank_cnndm_test`
+- `summ_summeval_aligned`

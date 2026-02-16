@@ -170,6 +170,108 @@ def load_gpt3_summ(json_path: str, name: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def load_frank(human_annotations_sentence_json: str, split_file: str) -> pd.DataFrame:
+    """Load FRANK and build a V2G view similar to NND's cnndm-only subset.
+
+    POS iff error_type == "NoE" (i.e., summary has no detected factual error under their aggregation).
+
+    We:
+    - filter to hashes in split_file
+    - restrict to CNNDM by heuristic: len(hash) >= 40
+    - keep 5 candidates per hash (one per system)
+    """
+    with open(split_file) as f:
+        valid = set(line.strip() for line in f if line.strip())
+
+    raw = json.load(open(human_annotations_sentence_json))
+    rows = []
+    for d in raw:
+        h = d.get("hash")
+        if h not in valid:
+            continue
+        # CNNDM heuristic used by nnd_evaluation
+        if h is None or len(h) < 40:
+            continue
+
+        # Determine error_type following nnd_evaluation logic:
+        # If label==1 -> NoE; else pick most common non-NoE error among sentence annotations.
+        error_type = "NoE"
+        # sentence-level annotations
+        annotator_labels = {}
+        summ_labels = []
+        for annot in d.get("summary_sentences_annotations", []):
+            annot_vals = [an for ans in annot.values() for an in ans]
+            noerror_count = sum(1 for an in annot_vals if an == "NoE")
+            label = 1 if noerror_count >= 2 else 0
+            summ_labels.append(label)
+            for anno_name, anno in annot.items():
+                annotator_labels.setdefault(anno_name, []).extend(anno)
+
+        label = 0 if any(sl == 0 for sl in summ_labels) else 1
+        if label == 0:
+            errors = [
+                a
+                for annos in annotator_labels.values()
+                for a in annos
+                if a != "NoE"
+            ]
+            if errors:
+                # majority error type
+                from collections import Counter
+
+                error_type = Counter(errors).most_common(1)[0][0]
+            else:
+                error_type = "Unknown"
+
+        rows.append(
+            {
+                "dataset": "summ_frank_cnndm_test",
+                "prompt_id": h,
+                "prompt": d.get("article", ""),
+                "candidate": d.get("summary", ""),
+                "system": d.get("model_name", "unknown"),
+                "pos": int(error_type == "NoE"),
+            }
+        )
+
+    return pd.DataFrame(rows)
+
+
+def load_summeval(model_annotations_aligned_jsonl: str) -> pd.DataFrame:
+    """Load public SummEval aligned annotations.
+
+    POS rule (approx): mean consistency across all 8 raters (3 expert + 5 turker) >= 4.0.
+
+    This matches the earlier quick analysis; if we later get the 'scored' file, we should switch.
+    """
+    rows = []
+    with open(model_annotations_aligned_jsonl, encoding="utf-8") as f:
+        for line in f:
+            d = json.loads(line)
+            pid = d.get("id")
+            # compute mean consistency across all raters
+            scores = []
+            for a in d.get("expert_annotations", []):
+                if "consistency" in a:
+                    scores.append(a["consistency"])
+            for a in d.get("turker_annotations", []):
+                if "consistency" in a:
+                    scores.append(a["consistency"])
+            mean_cons = (sum(scores) / len(scores)) if scores else 0.0
+            pos = mean_cons >= 4.0
+            rows.append(
+                {
+                    "dataset": "summ_summeval_aligned",
+                    "prompt_id": str(pid),
+                    "prompt": "",  # doc text not needed for distribution plots
+                    "candidate": d.get("decoded", ""),
+                    "system": d.get("model_id", "unknown"),
+                    "pos": int(pos),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
 def per_prompt_counts(df: pd.DataFrame) -> pd.DataFrame:
     g = df.groupby(["dataset", "prompt_id"], as_index=False)["pos"].agg(["count", "sum"])
     g = g.reset_index()
@@ -272,6 +374,17 @@ def main():
         fp = os.path.join(ha, f"{name}_human.json")
         if os.path.exists(fp):
             dfs.append(load_gpt3_summ(fp, name))
+
+    # FRANK (summary-level candidates per hash)
+    frank_json = os.path.join(nnd, "frank", "human_annotations_sentence.json")
+    frank_test = os.path.join(nnd, "frank", "test_split.txt")
+    if os.path.exists(frank_json) and os.path.exists(frank_test):
+        dfs.append(load_frank(frank_json, frank_test))
+
+    # SummEval (public aligned annotations)
+    summeval_path = os.path.join(nnd, "summeval", "model_annotations.aligned.jsonl")
+    if os.path.exists(summeval_path):
+        dfs.append(load_summeval(summeval_path))
 
     if not dfs:
         raise SystemExit("No datasets found under --nnd-data")
