@@ -22,6 +22,13 @@
 \newcommand{\V}{\mathcal{V}}  % Validator
 \newcommand{\G}{\mathcal{G}}  % Generator
 
+
+\newcommand\jd[1]{\todo[color=blue!40]{{\bf JD}: #1}}
+
+\newcommand{\juandiego}[1]{\textcolor{blue}{\textbf{JD:} #1}}
+
+\newcommand{\agent}[1]{\textcolor{brown}{\textbf{AI:} #1}}
+
 \title{Improving LM Generators via Validator-to-Generator Training}
 
 % For anonymous submission, leave author blank
@@ -116,6 +123,16 @@ To account for completion frequency, we subtract unconditional log probability:
 \todo{Fill in experimental details}
 
 \subsection{Tasks}
+
+% Here, trying to find new tasks:
+
+% Laban et al., Near-negative distinction: giving a second life to human evaluation datasets
+
+% Jennifer Hu's datasets from "Auxiliary task demands mask the capabilities of smaller language models"
+
+% P
+
+% These are probably fine:
 
 \paragraph{Hypernymy.}
 ``X is a kind of \_\_\_'' completion task with GPT-4 labeled ground truth.
