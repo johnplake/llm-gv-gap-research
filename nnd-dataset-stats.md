@@ -117,10 +117,13 @@ This yields four datasets:
 
 **Why this rule:** it avoids a hand-chosen numeric cutoff (like mean≥4.0) and cleanly operationalizes “near-positive” as *expert consensus on the maximum score*.
 
-- Resulting global stats (under this rule):
-  - Overall POS share: **0.678** (1085/1600).
-  - Per-prompt median split: **11 POS / 5 NEG**.
-  - “Strong negatives” (e.g., very low mean consistency) are rare under this labeling, so getting lots of NEGs for some dimensions may require different thresholds.
+- Resulting global stats (under this rule) **depend strongly on the dimension** (100 prompts × 16 candidates = 1600 records):
+  - **Consistency:** POS share **0.889**; median per-prompt **14 POS / 2 NEG**
+  - **Fluency:** POS share **0.862**; median per-prompt **14 POS / 2 NEG**
+  - **Coherence:** POS share **0.244**; median per-prompt **3 POS / 13 NEG**
+  - **Relevance:** POS share **0.223**; median per-prompt **3 POS / 13 NEG**
+
+This is the main reason the dimensions “behave very differently” for V2G filtering: some dimensions are POS-heavy (few NEGs), others are NEG-heavy (few POS).
 
 ### Summarization FRANK (CNNDM subset)
 - Data comes from `https://github.com/artidoro/frank` (raw GitHub files).
