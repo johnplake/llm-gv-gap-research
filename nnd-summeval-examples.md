@@ -7,16 +7,18 @@ This file provides a few concrete **SummEval** examples in the style of the MT M
 - 100 prompts × 16 candidates each
 
 ## POS vs NEG rule (current in this repo)
-This repo currently uses an **approximate** POS/NEG definition based only on what is publicly accessible in `model_annotations.aligned.jsonl`:
+This repo now uses a **non-arbitrary rule that mirrors the NND helper logic** (and avoids a hand-chosen cutoff):
 
-1. For each candidate summary, collect the **consistency** ratings from:
-   - 3 `expert_annotations`
-   - 5 `turker_annotations`
-   (8 total scores, each on a 1–5 scale)
-2. Compute `mean_consistency` as the average over those 8 scores.
-3. **POS** iff `mean_consistency >= 4.0`; else **NEG**.
+For a given dimension (we focus on **consistency** here):
+1. Use **only the 3 expert annotations** (`expert_annotations`).
+2. Count how many experts give the max score **5** for that dimension.
+3. **POS** iff a strict majority of experts give a 5.
+   - With 3 experts, this means: **POS iff (# of 5s) ≥ 2**.
+4. **NEG** otherwise.
 
-Note: this cutoff (4.0) is a design choice for now. If we regain access to the originally-hosted `model_annotations.aligned.scored.jsonl` / `...paired.jsonl` variants referenced by some pipelines, we should update the labeling to match the intended NND/SummEval derivation.
+This gives a binary label per (prompt, candidate) consistent with the intended “near-negative distinction” style: treat top-rated (by experts) as positives.
+
+We keep this file’s examples in the **consistency** dimension.
 
 ---
 
@@ -27,14 +29,14 @@ Note: this cutoff (4.0) is a design choice for now. If we regain access to the o
 Naoki Ogane says that Chelsea have made an offer for Yoshinori Muto. The 22-year-old forward has one goal in 11 games for Japan. Muto admits that it is an 'honour' to receive an offer from the Blues. Chelsea have signed a £200m sponsorship deal with Yokohama Rubber. Muto graduated from university with an economics degree two weeks ago. He would become the first Japanese player to sign for Chelsea.
 
 **POS (high mean consistency):**
-- POS `M5` mean_cons=4.75: “chelsea have made an offer for fc tokyo 's 22 - year - old forward yoshinori muto …”
-- POS `M12` mean_cons=4.38: “chelsea have made an offer for fc tokyo 's 22-year-old forward yoshinori muto …”
-- POS `M15` mean_cons=4.25: “chelsea have made an offer for fc tokyo 's 22-year-old forward yoshinori muto …”
+- POS `M5`: “chelsea have made an offer for fc tokyo 's 22 - year - old forward yoshinori muto …”
+- POS `M12`: “chelsea have made an offer for fc tokyo 's 22-year-old forward yoshinori muto …”
+- POS `M15`: “chelsea have made an offer for fc tokyo 's 22-year-old forward yoshinori muto …”
 
-**NEG (low mean consistency):**
-- NEG `M11` mean_cons=2.88: “chelsea have made an offer for fc tokyo 's dutch partner yoshinori muto …”
-- NEG `M10` mean_cons=3.62: “chelsea have made an offer … not connected to the 200million deal …”
-- NEG `M13` mean_cons=3.75: “chelsea have made an offer …”
+**NEG:**
+- NEG `M11`: “chelsea have made an offer for fc tokyo 's dutch partner yoshinori muto …”
+- NEG `M10`: “chelsea have made an offer … not connected to the 200million deal …”
+- NEG `M13`: “chelsea have made an offer …”
 
 ---
 

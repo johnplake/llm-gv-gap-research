@@ -240,35 +240,40 @@ def load_frank(human_annotations_sentence_json: str, split_file: str) -> pd.Data
 def load_summeval(model_annotations_aligned_jsonl: str) -> pd.DataFrame:
     """Load public SummEval aligned annotations.
 
-    POS rule (approx): mean consistency across all 8 raters (3 expert + 5 turker) >= 4.0.
+    Better-than-cutoff POS/NEG rule (mirrors the NND helper logic):
 
-    This matches the earlier quick analysis; if we later get the 'scored' file, we should switch.
+    For each dimension in {consistency, coherence, fluency, relevance}:
+    - look ONLY at the 3 `expert_annotations`
+    - define POS iff a strict majority of experts give the max score (5)
+      i.e. (# of 5s) > (num_experts / 2)  -> with 3 experts, this means >=2 experts give a 5.
+
+    This yields 4 derived binary-label datasets, one per dimension.
     """
     rows = []
+    dims = ["consistency", "coherence", "fluency", "relevance"]
     with open(model_annotations_aligned_jsonl, encoding="utf-8") as f:
         for line in f:
             d = json.loads(line)
             pid = d.get("id")
-            # compute mean consistency across all raters
-            scores = []
-            for a in d.get("expert_annotations", []):
-                if "consistency" in a:
-                    scores.append(a["consistency"])
-            for a in d.get("turker_annotations", []):
-                if "consistency" in a:
-                    scores.append(a["consistency"])
-            mean_cons = (sum(scores) / len(scores)) if scores else 0.0
-            pos = mean_cons >= 4.0
-            rows.append(
-                {
-                    "dataset": "summ_summeval_aligned",
-                    "prompt_id": str(pid),
-                    "prompt": "",  # doc text not needed for distribution plots
-                    "candidate": d.get("decoded", ""),
-                    "system": d.get("model_id", "unknown"),
-                    "pos": int(pos),
-                }
-            )
+            model_id = d.get("model_id", "unknown")
+            decoded = d.get("decoded", "")
+            experts = d.get("expert_annotations", [])
+            n = len(experts)
+            for dim in dims:
+                vals = [a.get(dim) for a in experts if dim in a]
+                # expect 3
+                num_5 = sum(1 for v in vals if v == 5)
+                pos = (n > 0) and (num_5 > n / 2)
+                rows.append(
+                    {
+                        "dataset": f"summ_summeval_{dim}",
+                        "prompt_id": str(pid),
+                        "prompt": "",
+                        "candidate": decoded,
+                        "system": model_id,
+                        "pos": int(pos),
+                    }
+                )
     return pd.DataFrame(rows)
 
 
