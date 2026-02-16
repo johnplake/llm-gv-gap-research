@@ -91,14 +91,23 @@ Notes:
 - Prompt grouping: `id` field (looks like `dm-test-<sha1>`; used as **cnndm_id**).
 - Candidates per prompt: always **16**.
 
-#### POS vs NEG definition (non-cutoff; matches NND helper logic)
-To avoid an arbitrary cutoff, we now mirror the logic used in the NND helper code style:
+#### What “POS” and “NEG” mean in SummEval (in this repo)
+SummEval provides **human quality ratings** on a 1–5 scale for 4 dimensions:
+`{consistency, coherence, fluency, relevance}`.
+Each (document id, model summary) has **3 expert ratings** and **5 crowd (turker) ratings**.
 
-For each dimension in `{consistency, coherence, fluency, relevance}` we define a separate binary-label dataset:
+For V2G/NND-style use we need a **binary POS/NEG label** per candidate, so in this repo we convert SummEval’s 1–5 scores into POS/NEG as follows.
+
+**Key idea:** POS means *near-perfect by experts* (a “near-positive”); NEG means *not near-perfect* (which can still be pretty good).
+
+**Rule (expert-majority-of-5; non-arbitrary; mirrors NND helper logic):**
+For each dimension we build a separate binary-label dataset.
 - Use **only the 3 expert annotations** (`expert_annotations`).
 - Let `num_5 = # of experts who gave score 5` for that dimension.
-- **POS** iff `num_5 > 3/2` (i.e., **at least 2 experts** gave a 5).
-- **NEG** otherwise.
+- **POS** iff `num_5 >= 2` (i.e., a strict majority of experts rated it **5/5**).
+- **NEG** otherwise (this includes candidates with many 4/5s, mixed scores, etc.).
+
+So **NEG does *not* mean “bad”**; it means “not in the expert-near-perfect bucket”, which is exactly what we want for NND-style near-negative contrast sets.
 
 This yields four datasets:
 - `summ_summeval_consistency`
@@ -106,11 +115,12 @@ This yields four datasets:
 - `summ_summeval_fluency`
 - `summ_summeval_relevance`
 
-This is much closer to an “intended label” style than the previous mean>=4.0 cutoff.
-- Resulting global stats:
+**Why this rule:** it avoids a hand-chosen numeric cutoff (like mean≥4.0) and cleanly operationalizes “near-positive” as *expert consensus on the maximum score*.
+
+- Resulting global stats (under this rule):
   - Overall POS share: **0.678** (1085/1600).
   - Per-prompt median split: **11 POS / 5 NEG**.
-  - Note: “strong negatives” are rare under this rule (only 3/1600 have mean consistency ≤ 2.0).
+  - “Strong negatives” (e.g., very low mean consistency) are rare under this labeling, so getting lots of NEGs for some dimensions may require different thresholds.
 
 ### Summarization FRANK (CNNDM subset)
 - Data comes from `https://github.com/artidoro/frank` (raw GitHub files).
