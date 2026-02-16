@@ -86,9 +86,19 @@ Notes:
 - Source file (public): `model_annotations.aligned.jsonl` (1600 (prompt, candidate) records = 100 prompts × 16 model summaries).
 - Prompt grouping: `id` field (looks like `dm-test-<sha1>`; used as **cnndm_id**).
 - Candidates per prompt: always **16**.
-- Label used here (approximation of NND-style POS/NEG):
-  - Compute mean **consistency** across all 8 raters (3 experts + 5 turkers).
-  - POS iff mean ≥ **4.0** else NEG.
+
+#### POS vs NEG definition (how we currently categorize)
+This repo currently uses a **simple cutoff rule** (an approximation of a cleaner NND-style label) based only on what is publicly accessible in `model_annotations.aligned.jsonl`:
+- Each candidate summary has **8 human ratings** of *consistency*:
+  - 3 `expert_annotations` + 5 `turker_annotations`
+  - each provides `consistency` on a 1–5 scale
+- Compute: `mean_consistency = average(consistency scores over all 8 raters)`
+- **POS** iff `mean_consistency >= 4.0`
+- **NEG** otherwise
+
+This is a *cutoff* choice (4.0) meant to separate “pretty consistent” from “not”. It is not guaranteed to match the original NND authors’ exact derived label if they use a different aggregation (their older helper code uses a majority-of-5s style for some settings).
+
+If/when we obtain `model_annotations.aligned.scored.jsonl` or `...paired.jsonl` (currently 403 from the original bucket), we should update to match their exact intended label construction.
 - Resulting global stats:
   - Overall POS share: **0.678** (1085/1600).
   - Per-prompt median split: **11 POS / 5 NEG**.
