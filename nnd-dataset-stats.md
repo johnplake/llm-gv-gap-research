@@ -39,6 +39,8 @@ For each sub-dataset:
 | **Summarization: “News Summarization in era of GPT‑3” (CNN)** (`cnn_human.json`) | doc_id | **100** | **3 / 3 / 3 / 3** | **0.377** | **1** | *(see note)* | POS = top voted summary (best/worst votes) |
 | **Summarization: same (BBC)** (`bbc_human.json`) | doc_id | **100** | **3 / 3 / 3 / 3** | **0.377** | **1** | *(see note)* | same as above |
 | **Summarization: same (Keyword)** (`keyword_human.json`) | — | **(not parsed yet)** | — | — | — | — | file schema differs (see below) |
+| **Summarization: FRANK (CNNDM subset, sentence-level factuality)** (`frank/human_annotations_sentence.json`) | hash | **175** | **5 / 5 / 5 / 5** | **0.563** | **3** | **2** | error_type==`NoE` is POS; otherwise NEG (majority error type) |
+| **Summarization: SummEval (CNNDM subset; 16 model outputs + human ratings)** (`summeval/model_annotations.aligned.jsonl`) | cnndm_id (= `id`, e.g. `dm-test-<hash>`) | **100** | **16 / 16 / 16 / 16** | **0.678** | **11** | **5** | POS iff mean(8× consistency) ≥ 4.0; else NEG (approx, see below) |
 
 **Notes:**
 - The GPT‑3 summarization annotation sets (CNN/BBC) have exactly **3 candidates per prompt** (gpt3/t0/brio). POS was defined as “max score” where score is computed from annotators choosing best (+1) and worst (−1). This is not strictly a symmetric POS/NEG split because ties can occur.
@@ -59,6 +61,25 @@ For each sub-dataset:
 ### QGen QuizDesign
 - Overall POS share: **0.460**.
 - Typical prompt has 6 candidates; median split is **2 POS / 3 NEG**.
+
+### Summarization SummEval (CNNDM subset)
+- Source file (public): `model_annotations.aligned.jsonl` (1600 (prompt, candidate) records = 100 prompts × 16 model summaries).
+- Prompt grouping: `id` field (looks like `dm-test-<sha1>`; used as **cnndm_id**).
+- Candidates per prompt: always **16**.
+- Label used here (approximation of NND-style POS/NEG):
+  - Compute mean **consistency** across all 8 raters (3 experts + 5 turkers).
+  - POS iff mean ≥ **4.0** else NEG.
+- Resulting global stats:
+  - Overall POS share: **0.678** (1085/1600).
+  - Per-prompt median split: **11 POS / 5 NEG**.
+  - Note: “strong negatives” are rare under this rule (only 3/1600 have mean consistency ≤ 2.0).
+
+### Summarization FRANK (CNNDM subset)
+- Data comes from `https://github.com/artidoro/frank` (raw GitHub files).
+- In NND construction, grouping key is **`hash`** (a document-level id); we filter to **CNNDM** items (the NND code uses `origin=="cnndm"`, operationalized as `len(hash) >= 40`).
+- Each prompt/hash has exactly **5 model summaries** (candidates).
+- Overall POS share (candidate-level): **0.563**.
+- Typical prompt (median) has **3 POS / 2 NEG**.
 
 ---
 
@@ -129,12 +150,15 @@ The NND paper/repo covers multiple domains. From what we can access in this envi
 - Summarization (GPT‑3-era human annotations for CNN/BBC) ✅
 
 Still pending:
-- **SummEval NND** (their code downloads a Google Drive file; may need manual fetch)
-- **FRANK NND** (should be fetchable from GitHub raw URLs; likely easiest next)
+- SummEval *paired/scored* variants referenced in some repos (`model_annotations.aligned.scored.jsonl`, `...paired.jsonl`) appear to be **permissioned (HTTP 403)** from the original GCS bucket at time of download. We used the public `model_annotations.aligned.jsonl` instead.
 - `keyword_human.json` parsing (schema differs from cnn/bbc)
 
 ---
 
 ## Repro / scripts
 
-Stats in this note were computed via ad-hoc Python scripts executed in the OpenClaw environment, using only standard library parsing (no numpy/pandas/datasets installed).
+Stats in this note were computed via small Python scripts executed in the OpenClaw environment, using only standard library parsing (no numpy/pandas/datasets installed).
+
+- FRANK fetch + stats script:
+  - `Projects/v2g/datasets/candidates/nnd_data/scripts/frank_fetch_and_stats.py`
+  - Downloads into: `Projects/v2g/datasets/candidates/nnd_data/frank/`

@@ -1,0 +1,20 @@
+{
+  "candidates_per_prompt": {
+    "max": 5,
+    "min": 5,
+    "p50": 5,
+    "p90": 5
+  },
+  "n_candidates": 875,
+  "n_prompts": 175,
+  "neg_overall": 382,
+  "neg_per_prompt": {
+    "p50": 2
+  },
+  "origin_filter": "cnndm",
+  "pos_overall": 493,
+  "pos_per_prompt": {
+    "p50": 3
+  },
+  "pos_share_overall": 0.5634285714285714
+}
