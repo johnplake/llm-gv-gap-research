@@ -16,6 +16,8 @@ This folder contains **candidate-level JSONL** files with a common schema so we 
 
 ## Files
 
+### Candidate-level
+
 - `summeval_cnndm_v2g_candidates.jsonl`
   - Source: `../summeval/model_annotations.aligned.jsonl`
   - Split assignment: alternates `val/test` by line index parity (to match the upstream `nnd_evaluation` convention).
@@ -25,6 +27,13 @@ This folder contains **candidate-level JSONL** files with a common schema so we 
   - Source: `../frank/human_annotations_sentence.json` + `../frank/test_split.txt`
   - Subset: cnndm-only via NND heuristic `len(hash) >= 40`
   - Label: POS iff `error_type == "NoE"`.
+
+### Pairwise (capped)
+
+- `summeval_cnndm_v2g_pairs.jsonl`
+- `frank_test_cnndm_v2g_pairs.jsonl` *(may be empty with the current FRANK label rule because prompts often have all-POS or all-NEG candidates, yielding no POS×NEG pairs)*
+
+Pairing policy: for each prompt, take the POS×NEG cross-product and sample up to **N pairs per prompt** without replacement using a deterministic seed based on `(seed, dataset, prompt_id)`.
 
 ## Regeneration
 
