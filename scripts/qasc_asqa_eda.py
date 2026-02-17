@@ -95,6 +95,15 @@ def _sample(ds, k: int, seed: int = 0) -> List[Dict[str, Any]]:
     return [ds[i] for i in idxs]
 
 
+def _sample_across_splits(ds_dict, k_per_split: int, seed: int) -> List[Tuple[str, Dict[str, Any]]]:
+    """Return list of (split, example) pairs sampled from each split."""
+    out: List[Tuple[str, Dict[str, Any]]] = []
+    for i, (split, ds) in enumerate(ds_dict.items()):
+        exs = _sample(ds, k_per_split, seed=seed + 17 * i)
+        out.extend([(split, ex) for ex in exs])
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument(
@@ -135,11 +144,11 @@ def main() -> None:
     lines.append("- `choices.text` contains **8 candidate answer strings**")
     lines.append("- `answerKey` selects the correct one")
     lines.append("")
-    lines.append("### Examples")
-    qasc_examples = _sample(qasc["train"], args.examples, seed=1)
-    for i, ex in enumerate(qasc_examples, start=1):
+    lines.append("### Examples (sampled across splits)")
+    qasc_examples = _sample_across_splits(qasc, args.examples, seed=1)
+    for i, (split, ex) in enumerate(qasc_examples, start=1):
         lines.append("")
-        lines.append(f"#### QASC example {i}")
+        lines.append(f"#### QASC example {i} ({split})")
         lines.append(_qasc_example(ex))
 
     # ASQA
@@ -159,11 +168,11 @@ def main() -> None:
     lines.append("- `qa_pairs` is a list: each element has a disambiguated `question` and a list of short answers in `short_answers`")
     lines.append("- `annotations` contains one or more long-form answers that (ideally) cover all disambiguations")
     lines.append("")
-    lines.append("### Examples")
-    asqa_examples = _sample(asqa["train"], args.examples, seed=2)
-    for i, ex in enumerate(asqa_examples, start=1):
+    lines.append("### Examples (sampled across splits)")
+    asqa_examples = _sample_across_splits(asqa, args.examples, seed=2)
+    for i, (split, ex) in enumerate(asqa_examples, start=1):
         lines.append("")
-        lines.append(f"#### ASQA example {i}")
+        lines.append(f"#### ASQA example {i} ({split})")
         lines.append(_asqa_example(ex))
 
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
