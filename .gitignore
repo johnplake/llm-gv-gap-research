@@ -24,6 +24,31 @@
 # Overleaf
 .texpadtmp/
 
-# Dataset downloads / caches (keep scripts + reports in git; keep raw data out)
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Data files - NEVER commit raw data!
+outputs/
+datasets/candidates/
+datasets/plausibleqa/
+datasets/collie_repo/
 datasets/raw/
-datasets/plausibleqa/test.json
+*.csv
+*.tsv
+*.jsonl
+*.npy
+*.parquet
+*.zip
+*.tar.gz
+
+# Keep these documentation files (not data)
+!datasets/*.md
+!datasets/reports/*.md
+
+# Scripts and analysis are OK
+!scripts/
+!*.py
