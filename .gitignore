@@ -26,3 +26,4 @@
 
 # Dataset downloads / caches (keep scripts + reports in git; keep raw data out)
 datasets/raw/
+datasets/plausibleqa/test.json

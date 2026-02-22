@@ -1,0 +1,205 @@
+{
+  "current_rows": 12050,
+  "missing": [
+    {
+      "question_id": "nq_1718",
+      "question": "who sang gon na sit right down and write myself a letter?",
+      "answer": "Ella Fitzgerald"
+    },
+    {
+      "question_id": "nq_1718",
+      "question": "who sang gon na sit right down and write myself a letter?",
+      "answer": "Paul McCartney"
+    },
+    {
+      "question_id": "nq_1571",
+      "question": "who plays in the new mary poppins movie?",
+      "answer": "Emily Blunt"
+    },
+    {
+      "question_id": "nq_1571",
+      "question": "who plays in the new mary poppins movie?",
+      "answer": "Lin-Manuel Miranda"
+    },
+    {
+      "question_id": "nq_1571",
+      "question": "who plays in the new mary poppins movie?",
+      "answer": "Ben Whishaw"
+    },
+    {
+      "question_id": "nq_1571",
+      "question": "who plays in the new mary poppins movie?",
+      "answer": "Emily Mortimer"
+    },
+    {
+      "question_id": "nq_1571",
+      "question": "who plays in the new mary poppins movie?",
+      "answer": "Julie Walters"
+    },
+    {
+      "question_id": "nq_1571",
+      "question": "who plays in the new mary poppins movie?",
+      "answer": "Colin Firth"
+    },
+    {
+      "question_id": "nq_1571",
+      "question": "who plays in the new mary poppins movie?",
+      "answer": "Meryl Streep"
+    },
+    {
+      "question_id": "nq_1571",
+      "question": "who plays in the new mary poppins movie?",
+      "answer": "Dick Van Dyke"
+    },
+    {
+      "question_id": "nq_1571",
+      "question": "who plays in the new mary poppins movie?",
+      "answer": "Angela Lansbury"
+    },
+    {
+      "question_id": "trivia_342",
+      "question": "The letter t is the second most common letter used in the English language?",
+      "answer": "No"
+    },
+    {
+      "question_id": "trivia_9027",
+      "question": "Which Greek philosopher taught at the Lyceum?",
+      "answer": "Aristotle"
+    },
+    {
+      "question_id": "trivia_9027",
+      "question": "Which Greek philosopher taught at the Lyceum?",
+      "answer": "Theophrastus"
+    },
+    {
+      "question_id": "nq_750",
+      "question": "how much is the united states in debt to china?",
+      "answer": "about $780 billion (mainland China holdings of U.S. Treasuries, circa 2024)"
+    },
+    {
+      "question_id": "nq_750",
+      "question": "how much is the united states in debt to china?",
+      "answer": "about $1.05 trillion (including Hong Kong’s holdings, circa 2024)"
+    },
+    {
+      "question_id": "trivia_10168",
+      "question": "Who was Cassius Clay's manager?",
+      "answer": "Herbert Muhammad"
+    },
+    {
+      "question_id": "trivia_10168",
+      "question": "Who was Cassius Clay's manager?",
+      "answer": "Louisville Sponsoring Group"
+    },
+    {
+      "question_id": "trivia_2415",
+      "question": "On September 28th, NASA announced that what had been detected on Mars?",
+      "answer": "Liquid water"
+    },
+    {
+      "question_id": "trivia_2415",
+      "question": "On September 28th, NASA announced that what had been detected on Mars?",
+      "answer": "Flowing water"
+    },
+    {
+      "question_id": "trivia_2415",
+      "question": "On September 28th, NASA announced that what had been detected on Mars?",
+      "answer": "Hydrated salts indicating liquid water"
+    },
+    {
+      "question_id": "nq_481",
+      "question": "who was elected the president of constituent assembly?",
+      "answer": "Dr. Rajendra Prasad"
+    },
+    {
+      "question_id": "nq_481",
+      "question": "who was elected the president of constituent assembly?",
+      "answer": "Muhammad Ali Jinnah"
+    },
+    {
+      "question_id": "nq_3013",
+      "question": "who is in charge of new issues not mentioned in the constitution?",
+      "answer": "the states"
+    },
+    {
+      "question_id": "nq_3013",
+      "question": "who is in charge of new issues not mentioned in the constitution?",
+      "answer": "the people"
+    },
+    {
+      "question_id": "nq_3013",
+      "question": "who is in charge of new issues not mentioned in the constitution?",
+      "answer": "Congress"
+    },
+    {
+      "question_id": "nq_714",
+      "question": "who sang the theme song for the man with the golden gun?",
+      "answer": "Lulu"
+    },
+    {
+      "question_id": "nq_714",
+      "question": "who sang the theme song for the man with the golden gun?",
+      "answer": "Alice Cooper"
+    },
+    {
+      "question_id": "nq_1273",
+      "question": "how long did the menendez brothers get in prison for killing their parents?",
+      "answer": "life in prison without the possibility of parole"
+    },
+    {
+      "question_id": "nq_1273",
+      "question": "how long did the menendez brothers get in prison for killing their parents?",
+      "answer": "two consecutive life sentences without the possibility of parole"
+    },
+    {
+      "question_id": "webq_35",
+      "question": "who did cam newton sign with?",
+      "answer": "Carolina Panthers"
+    },
+    {
+      "question_id": "webq_35",
+      "question": "who did cam newton sign with?",
+      "answer": "New England Patriots"
+    },
+    {
+      "question_id": "webq_1388",
+      "question": "what time zone is toronto gmt?",
+      "answer": "GMT-5 (EST)"
+    },
+    {
+      "question_id": "webq_1388",
+      "question": "what time zone is toronto gmt?",
+      "answer": "GMT-4 (EDT)"
+    },
+    {
+      "question_id": "webq_978",
+      "question": "what part did jeff conaway play in grease?",
+      "answer": "Kenickie"
+    },
+    {
+      "question_id": "webq_978",
+      "question": "what part did jeff conaway play in grease?",
+      "answer": "Danny Zuko"
+    },
+    {
+      "question_id": "nq_2553",
+      "question": "what city was zeus the patron god of?",
+      "answer": "Olympia"
+    },
+    {
+      "question_id": "nq_2553",
+      "question": "what city was zeus the patron god of?",
+      "answer": "Dodona"
+    },
+    {
+      "question_id": "nq_2553",
+      "question": "what city was zeus the patron god of?",
+      "answer": "Dion"
+    },
+    {
+      "question_id": "nq_737",
+      "question": "who wrote the song photograph by ringo starr?",
+      "answer": "Ringo Starr"
+    }
+  ]
+}
