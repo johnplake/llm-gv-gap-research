@@ -45,6 +45,10 @@ datasets/raw/
 *.zip
 *.tar.gz
 
+# Exception: cleaned QA verification outputs (code-like, small)
+!outputs/plausibleqa-verified.csv
+!outputs/plausibleqa-remaining.csv
+
 # Keep these documentation files (not data)
 !datasets/*.md
 !datasets/reports/*.md
